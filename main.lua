@@ -1,9 +1,11 @@
 --Variable que inicializa el estado del juego desde el menu
-gamestate= "menu"
+gamestate= "game"
 --Variable que registra el combo actual separado en centenas, decenas y unidades para interactuar
 --de manera mas facil con una interfaz grafica
 combo={valor=0,digitos={0,0,0}}
 score={valor=0,digitos={0,0,0,0,0}}
+sound=love.audio.newSource("sounds/Kill.mp3","static")
+music={}
 coordinates={}
 grid={}
 scorerow={}
@@ -11,7 +13,10 @@ comborow={}
 empty={}
 timer=0
 count=0
-
+music.menu = love.audio.newSource( 'music/menu.mp3', 'stream' )
+music.game = love.audio.newSource( 'music/game.mp3', 'stream' )
+music.gameover = love.audio.newSource( 'music/gameover.mp3', 'stream' )
+bgmusic= music.game
 for i = 1, 5 do
       coordinates[i] = {}
       for j = 1, 5 do
@@ -139,36 +144,43 @@ function love.draw()
 end
 
 function love.update(dt)
-  for i = 1, 5 do
-    scorerow[i].animation:gotoFrame(score.digitos[i]+1)
+  bgmusic:setLooping( true )
+  bgmusic:play()
+  if(gamestate=="menu")then
+    
   end
-  for i = 1, 3 do
-    comborow[i].animation:gotoFrame(combo.digitos[i]+1)
-  end
-  count=count+1
-  timer=timer+1
-  if(timer==180-combo.valor and #empty>0)then
-    timer=0
-    randomI = math.random(1, #empty)
-    moleout = empty[randomI]
-    table.remove(empty,randomI)
-    grid[moleout].mole=true
-    grid[moleout].animation:resume()
-  end
-  for i = 1, 5 do
-    for j = 1, 5 do
-      if(count==60 and grid[coordinates[i][j]].mole) then
-        count=0
-        grid[coordinates[i][j]].time=grid[coordinates[i][j]].time+1
-        if(grid[coordinates[i][j]].time==3)then
-          gameover()
+  if(gamestate=="game")then
+    for i = 1, 5 do
+      scorerow[i].animation:gotoFrame(score.digitos[i]+1)
+    end
+    for i = 1, 3 do
+      comborow[i].animation:gotoFrame(combo.digitos[i]+1)
+    end
+    count=count+1
+    timer=timer+1
+    if(timer>=100-combo.valor and #empty>0)then
+      timer=0
+      randomI = math.random(1, #empty)
+      moleout = empty[randomI]
+      table.remove(empty,randomI)
+      grid[moleout].mole=true
+      grid[moleout].animation:resume()
+    end
+    for i = 1, 5 do
+      for j = 1, 5 do
+        if(count==60 and grid[coordinates[i][j]].mole) then
+          count=0
+          grid[coordinates[i][j]].time=grid[coordinates[i][j]].time+1
+          if(grid[coordinates[i][j]].time==3)then
+            gameover()
+          end
         end
       end
     end
-  end
-  for i = 1, 5 do
-    for j = 1, 5 do
-      grid[coordinates[i][j]].animation:update(dt)
+    for i = 1, 5 do
+      for j = 1, 5 do
+        grid[coordinates[i][j]].animation:update(dt)
+      end
     end
   end
 end
@@ -186,8 +198,9 @@ function love.mousepressed(x,y,button,istouch)
       end
     end
     coord= r.."x"..c
-    print(coord)
     if(grid[coord].mole) then
+      sound:stop()
+      sound:play()
       table.insert(empty,coord)
       grid[coord].mole=false
       grid[coord].animation:pauseAtStart()
